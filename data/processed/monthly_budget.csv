@@ -1,0 +1,34 @@
+budget_id,category_id,category_name,budget_month,budget_year,budget_amount
+1,2,Housing,10,2026,25000.0
+2,3,Food & Dining,10,2026,12000.0
+3,4,Transportation,10,2026,7000.0
+4,5,Shopping,10,2026,8000.0
+5,6,Utilities,10,2026,5000.0
+6,7,Healthcare,10,2026,4000.0
+7,8,Entertainment,10,2026,3500.0
+8,9,Education,10,2026,3000.0
+9,10,Travel,10,2026,6000.0
+10,11,Other,10,2026,2000.0
+11,12,Uncategorised,10,2026,1500.0
+12,2,Housing,11,2026,25000.0
+13,3,Food & Dining,11,2026,12000.0
+14,4,Transportation,11,2026,7000.0
+15,5,Shopping,11,2026,8000.0
+16,6,Utilities,11,2026,5000.0
+17,7,Healthcare,11,2026,4000.0
+18,8,Entertainment,11,2026,3500.0
+19,9,Education,11,2026,3000.0
+20,10,Travel,11,2026,6000.0
+21,11,Other,11,2026,2000.0
+22,12,Uncategorised,11,2026,1500.0
+23,2,Housing,12,2026,25000.0
+24,3,Food & Dining,12,2026,12000.0
+25,4,Transportation,12,2026,7000.0
+26,5,Shopping,12,2026,8000.0
+27,6,Utilities,12,2026,5000.0
+28,7,Healthcare,12,2026,4000.0
+29,8,Entertainment,12,2026,3500.0
+30,9,Education,12,2026,3000.0
+31,10,Travel,12,2026,6000.0
+32,11,Other,12,2026,2000.0
+33,12,Uncategorised,12,2026,1500.0

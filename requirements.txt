@@ -1,0 +1,12 @@
+# Personal Expense Tracker & Budget Dashboard
+# HCL Data Analyst Training Capstone Project
+
+pandas>=2.2.0
+numpy>=1.26.0
+streamlit>=1.35.0
+plotly>=5.20.0
+pytest>=8.0.0
+python-dotenv>=1.0.1
+openpyxl>=3.1.2
+oracledb>=2.1.0
+matplotlib>=3.8.0

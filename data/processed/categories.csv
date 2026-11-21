@@ -1,0 +1,13 @@
+category_id,category_name,category_type,description,is_active
+1,Salary,INCOME,Primary and secondary employment earnings,Y
+2,Housing,FIXED,"Residential rent, maintenance, and home upkeep",Y
+3,Food & Dining,DISCRETIONARY,"Groceries, food delivery, dining out, and cafes",Y
+4,Transportation,DISCRETIONARY,"Vehicle fuel, cabs, public transit, and tolls",Y
+5,Shopping,DISCRETIONARY,"Apparel, electronics, retail, and household items",Y
+6,Utilities,FIXED,"Electricity, water, broadband, gas, and mobile bills",Y
+7,Healthcare,DISCRETIONARY,"Doctor fees, pharmacy, diagnostic tests, and clinics",Y
+8,Entertainment,DISCRETIONARY,"OTT streaming, cinema tickets, gaming, and events",Y
+9,Education,DISCRETIONARY,"Courses, certifications, books, and training programs",Y
+10,Travel,DISCRETIONARY,"Flights, hotels, outstation trips, and vacations",Y
+11,Other,OTHER,Miscellaneous and contingency outlays,Y
+12,Uncategorised,OTHER,Unclassified gateway or merchant debits requiring review,Y

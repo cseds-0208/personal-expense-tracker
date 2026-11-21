@@ -1,0 +1,7 @@
+payment_method_id,method_name,channel_type,is_active
+1,Net Banking,BANKING,Y
+2,UPI,DIGITAL,Y
+3,Credit Card,CREDIT,Y
+4,Debit Card,BANKING,Y
+5,Cash,PHYSICAL,Y
+6,Other,DIGITAL,Y

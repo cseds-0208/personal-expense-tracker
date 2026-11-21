@@ -1,0 +1,211 @@
+-- =============================================================================
+-- SCRIPT 01: ORACLE DATABASE DDL (TABLE CREATION & CONSTRAINTS)
+-- PROJECT: Personal Expense Tracker and Budget Dashboard
+-- DOMAIN: Banking and Financial Services
+-- ALIGNMENT: HCL Data Analyst Enterprise Training Standard
+-- TARGET COMPATIBILITY: Oracle 12c / 18c / 19c / 21c / 23c / XE
+-- =============================================================================
+
+SET ECHO ON;
+SET SERVEROUTPUT ON;
+
+-- -----------------------------------------------------------------------------
+-- SAFE OBJECT CLEANUP (DROP IF EXISTS)
+-- -----------------------------------------------------------------------------
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE AUDIT_LOG CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE BUDGET_BREACH_LOG CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE MONTHLY_BUDGET CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE TRANSACTIONS CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE PAYMENT_METHODS CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE CATEGORIES CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+-- Drop sequences
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_CATEGORY_ID';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_TRANSACTION_ID';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_BUDGET_ID';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_BREACH_LOG_ID';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_AUDIT_LOG_ID';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+-- -----------------------------------------------------------------------------
+-- CREATE SEQUENCES
+-- -----------------------------------------------------------------------------
+CREATE SEQUENCE SEQ_CATEGORY_ID START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_TRANSACTION_ID START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_BUDGET_ID START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_BREACH_LOG_ID START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+CREATE SEQUENCE SEQ_AUDIT_LOG_ID START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+-- -----------------------------------------------------------------------------
+-- TABLE 1: CATEGORIES (Dimension Table)
+-- -----------------------------------------------------------------------------
+CREATE TABLE CATEGORIES (
+    CATEGORY_ID     NUMBER(5)           DEFAULT SEQ_CATEGORY_ID.NEXTVAL CONSTRAINT PK_CATEGORIES PRIMARY KEY,
+    CATEGORY_NAME   VARCHAR2(50)        NOT NULL,
+    CATEGORY_TYPE   VARCHAR2(20)        DEFAULT 'DISCRETIONARY' NOT NULL,
+    DESCRIPTION     VARCHAR2(255),
+    IS_ACTIVE       CHAR(1)             DEFAULT 'Y' NOT NULL,
+    CREATED_AT      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT UQ_CATEGORY_NAME UNIQUE (CATEGORY_NAME),
+    CONSTRAINT CK_CAT_TYPE CHECK (CATEGORY_TYPE IN ('FIXED', 'DISCRETIONARY', 'INCOME', 'SAVINGS', 'OTHER')),
+    CONSTRAINT CK_CAT_ACTIVE CHECK (IS_ACTIVE IN ('Y', 'N'))
+);
+
+COMMENT ON TABLE CATEGORIES IS 'Master lookup dimension of income and expense taxonomy classifications.';
+COMMENT ON COLUMN CATEGORIES.CATEGORY_ID IS 'Surrogate primary key for category.';
+COMMENT ON COLUMN CATEGORIES.CATEGORY_NAME IS 'Standardized financial category name.';
+COMMENT ON COLUMN CATEGORIES.CATEGORY_TYPE IS 'Economic classification (FIXED, DISCRETIONARY, INCOME, etc.).';
+
+-- -----------------------------------------------------------------------------
+-- TABLE 2: PAYMENT_METHODS (Dimension Table)
+-- -----------------------------------------------------------------------------
+CREATE TABLE PAYMENT_METHODS (
+    PAYMENT_METHOD_ID NUMBER(3)         CONSTRAINT PK_PAYMENT_METHODS PRIMARY KEY,
+    METHOD_NAME       VARCHAR2(30)      NOT NULL,
+    CHANNEL_TYPE      VARCHAR2(20)      DEFAULT 'DIGITAL' NOT NULL,
+    IS_ACTIVE         CHAR(1)           DEFAULT 'Y' NOT NULL,
+    CONSTRAINT UQ_METHOD_NAME UNIQUE (METHOD_NAME),
+    CONSTRAINT CK_PM_CHANNEL CHECK (CHANNEL_TYPE IN ('DIGITAL', 'BANKING', 'PHYSICAL', 'CREDIT'))
+);
+
+COMMENT ON TABLE PAYMENT_METHODS IS 'Dimension table storing supported transactional payment rails.';
+
+-- -----------------------------------------------------------------------------
+-- TABLE 3: TRANSACTIONS (Fact Table)
+-- -----------------------------------------------------------------------------
+CREATE TABLE TRANSACTIONS (
+    TRANSACTION_ID   NUMBER(10)          DEFAULT SEQ_TRANSACTION_ID.NEXTVAL CONSTRAINT PK_TRANSACTIONS PRIMARY KEY,
+    TRANSACTION_DATE DATE                NOT NULL,
+    DESCRIPTION      VARCHAR2(255)       NOT NULL,
+    AMOUNT           NUMBER(12,2)        NOT NULL,
+    CATEGORY_ID      NUMBER(5)           NOT NULL,
+    TRANSACTION_TYPE VARCHAR2(10)        NOT NULL,
+    PAYMENT_METHOD   VARCHAR2(30)        NOT NULL,
+    NOTES            VARCHAR2(500),
+    SOURCE_RAW_ID    VARCHAR2(50),
+    CREATED_AT       TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_TXN_CATEGORY FOREIGN KEY (CATEGORY_ID) REFERENCES CATEGORIES(CATEGORY_ID),
+    CONSTRAINT CK_TXN_AMOUNT CHECK (AMOUNT > 0),
+    CONSTRAINT CK_TXN_TYPE CHECK (TRANSACTION_TYPE IN ('INCOME', 'EXPENSE', 'REFUND'))
+);
+
+COMMENT ON TABLE TRANSACTIONS IS 'Core financial transaction fact table recording debits, credits, and refunds.';
+COMMENT ON COLUMN TRANSACTIONS.TRANSACTION_TYPE IS 'Type of ledger entry: INCOME (credit), EXPENSE (debit), or REFUND (contra-expense).';
+COMMENT ON COLUMN TRANSACTIONS.AMOUNT IS 'Absolute positive transactional amount (in INR/currency).';
+
+-- Create performance indexes for analytical queries
+CREATE INDEX IDX_TXN_DATE ON TRANSACTIONS(TRANSACTION_DATE);
+CREATE INDEX IDX_TXN_CATEGORY ON TRANSACTIONS(CATEGORY_ID);
+CREATE INDEX IDX_TXN_TYPE ON TRANSACTIONS(TRANSACTION_TYPE);
+CREATE INDEX IDX_TXN_DATE_CAT_TYPE ON TRANSACTIONS(TRANSACTION_DATE, CATEGORY_ID, TRANSACTION_TYPE);
+
+-- -----------------------------------------------------------------------------
+-- TABLE 4: MONTHLY_BUDGET (Budget Definition Dimension/Fact)
+-- -----------------------------------------------------------------------------
+CREATE TABLE MONTHLY_BUDGET (
+    BUDGET_ID        NUMBER(10)          DEFAULT SEQ_BUDGET_ID.NEXTVAL CONSTRAINT PK_MONTHLY_BUDGET PRIMARY KEY,
+    CATEGORY_ID      NUMBER(5)           NOT NULL,
+    BUDGET_MONTH     NUMBER(2)           NOT NULL,
+    BUDGET_YEAR      NUMBER(4)           NOT NULL,
+    BUDGET_AMOUNT    NUMBER(12,2)        NOT NULL,
+    CREATED_AT       TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UPDATED_AT       TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_BUDGET_CATEGORY FOREIGN KEY (CATEGORY_ID) REFERENCES CATEGORIES(CATEGORY_ID),
+    CONSTRAINT CK_BUDGET_MONTH CHECK (BUDGET_MONTH BETWEEN 1 AND 12),
+    CONSTRAINT CK_BUDGET_YEAR CHECK (BUDGET_YEAR BETWEEN 2020 AND 2099),
+    CONSTRAINT CK_BUDGET_AMOUNT CHECK (BUDGET_AMOUNT >= 0),
+    CONSTRAINT UQ_BUDGET_CAT_PERIOD UNIQUE (CATEGORY_ID, BUDGET_MONTH, BUDGET_YEAR)
+);
+
+COMMENT ON TABLE MONTHLY_BUDGET IS 'Configured monthly budget limits per category for variance and breach tracking.';
+CREATE INDEX IDX_BUDGET_PERIOD ON MONTHLY_BUDGET(BUDGET_YEAR, BUDGET_MONTH);
+
+-- -----------------------------------------------------------------------------
+-- TABLE 5: BUDGET_BREACH_LOG (Audit & Monitoring Log)
+-- -----------------------------------------------------------------------------
+CREATE TABLE BUDGET_BREACH_LOG (
+    LOG_ID          NUMBER(10)          DEFAULT SEQ_BREACH_LOG_ID.NEXTVAL CONSTRAINT PK_BUDGET_BREACH_LOG PRIMARY KEY,
+    CATEGORY_ID     NUMBER(5)           NOT NULL,
+    LOG_MONTH       NUMBER(2)           NOT NULL,
+    LOG_YEAR        NUMBER(4)           NOT NULL,
+    BUDGET_AMOUNT   NUMBER(12,2)        NOT NULL,
+    ACTUAL_SPEND    NUMBER(12,2)        NOT NULL,
+    VARIANCE_AMOUNT NUMBER(12,2)        NOT NULL,
+    BREACH_STATUS   VARCHAR2(20)        NOT NULL,
+    DETECTED_AT     TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT FK_BREACH_CATEGORY FOREIGN KEY (CATEGORY_ID) REFERENCES CATEGORIES(CATEGORY_ID),
+    CONSTRAINT CK_BREACH_STATUS CHECK (BREACH_STATUS IN ('BREACH', 'WARNING', 'ON_TRACK'))
+);
+
+COMMENT ON TABLE BUDGET_BREACH_LOG IS 'Historical log of budget evaluation results generated by PL/SQL validation jobs.';
+
+-- -----------------------------------------------------------------------------
+-- TABLE 6: AUDIT_LOG (Data Ingestion & Hygiene Quarantine Log)
+-- -----------------------------------------------------------------------------
+CREATE TABLE AUDIT_LOG (
+    AUDIT_ID         NUMBER(10)         DEFAULT SEQ_AUDIT_LOG_ID.NEXTVAL CONSTRAINT PK_AUDIT_LOG PRIMARY KEY,
+    RAW_RECORD_REF   VARCHAR2(50),
+    ISSUE_TYPE       VARCHAR2(50)       NOT NULL,
+    SEVERITY         VARCHAR2(20)       DEFAULT 'WARNING' NOT NULL,
+    DETAILS          VARCHAR2(400)      NOT NULL,
+    LOGGED_AT        TIMESTAMP          DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT CK_AUDIT_SEV CHECK (SEVERITY IN ('INFO', 'WARNING', 'ERROR', 'FATAL'))
+);
+
+COMMENT ON TABLE AUDIT_LOG IS 'Quarantine and audit trail for rejected, corrected, or unclassified raw data entries.';
+
+PROMPT =====================================================================;
+PROMPT Table creation completed successfully. 6 tables and 5 sequences created.
+PROMPT =====================================================================;
