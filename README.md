@@ -210,8 +210,10 @@ python -m python.run_pipeline
 
 ### Step 4: Launch the Streamlit Web Application
 ```powershell
-streamlit run app/main.py
+python -m streamlit run app/main.py
 ```
+*(Alternatively, run `.\run_app.bat` or `streamlit run app/main.py`)*
+
 *Access the local web dashboard at `http://localhost:8501` in your browser.*
 
 ### Step 5: Execute Automated Test Suite
