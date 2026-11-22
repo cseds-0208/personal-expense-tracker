@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 💳 Personal Expense Tracker & Budget Dashboard
 
 [![Python Version](https://img.shields.io/badge/Python-3.14%2B-blue.svg?logo=python)](https://python.org)
@@ -328,3 +329,6 @@ Detailed test evidence is documented in [reports/test_cases.md](reports/test_cas
 
 **Developed with precision for HCL Data Analyst Training Program**  
 *Author: Senior Data Analytics, Python & Database Engineering Team*
+=======
+# personal-expense-tracker
+>>>>>>> f2dee2cae4bc5d3ab348a25ae1d61a2175d13ece
